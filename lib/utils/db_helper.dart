@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:sqflite/sqflite.dart';
 import 'dart:async';
 import 'package:path/path.dart';
@@ -110,5 +108,10 @@ class DatabaseHelper {
     }
 
     return noteList;
+  }
+
+  Future<int> deleteAllNotes() async {
+    Database db = await this.database;
+    return await db.delete(noteTable);
   }
 }

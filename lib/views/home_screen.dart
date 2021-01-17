@@ -5,6 +5,7 @@ import 'package:flutter_note_app/utils/theme_bloc.dart';
 import 'package:flutter_note_app/utils/theme_data.dart';
 import 'package:flutter_note_app/views/add_note_screen.dart';
 import 'package:flutter_note_app/views/search_note.dart';
+import 'package:flutter_note_app/widgets/alertdialog_widget.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:share/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -67,16 +68,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 final Note result = await showSearch(
                     context: context, delegate: NotesSearch(notes: noteList));
                 if (result != null) {
-                  navigateToDetail(result, 'Edit Note',widget.darkThemeEnabled);
+                  navigateToDetail(result, 'Edit Note',widget.darkThemeEnabled,true);
               }
             },
-          ),
-          IconButton(
-            onPressed: () {
-              Share.share(
-                  'https://github.com/simformsolutions/flutter_note_app');
-            },
-            icon: Icon(Icons.share),
           ),
             noteList.length == 0
                 ? Container(
@@ -93,29 +87,66 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
             ) ,
-          PopupMenuButton<bool>(
+          PopupMenuButton<String>(
             onSelected: (res) {
-              bloc.changeTheme(res);
-              _setPref(res);
-              setState(() {
-                if (_themeType == 'Dark Theme') {
-                  _themeType = 'Light Theme';
-                  Themes.darkThemeEnabled = false;
-                } else {
-                  _themeType = 'Dark Theme';
-                  Themes.darkThemeEnabled = true;
-                }
-              });
+              if(res == 'Theme') {
+                bloc.changeTheme(!Themes.darkThemeEnabled);
+                _setPref(!Themes.darkThemeEnabled);
+                setState(() {
+                  if (_themeType == 'Dark Theme') {
+                    _themeType = 'Light Theme';
+                    Themes.darkThemeEnabled = false;
+                  } else {
+                    _themeType = 'Dark Theme';
+                    Themes.darkThemeEnabled = true;
+                  }
+                });
+              }
+              else if(res == 'Delete'){
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialogWidget(
+                      contentText: "Are you sure you want to delete all notes?",
+                      confirmFunction: () async {
+                        databaseHelper.deleteAllNotes();
+                        setState(() {
+                          noteList = new List<Note>();
+                        });
+                        Navigator.of(context).pop();
+                      },
+                      declineFunction: () {
+                        Navigator.of(context).pop();
+                      },
+                    );
+                  },
+                );
+              }
             },
             itemBuilder: (context) {
-              return <PopupMenuEntry<bool>>[
-                PopupMenuItem<bool>(
-                  value: !widget.darkThemeEnabled,
-                  child: Text(_themeType),
+              return <PopupMenuEntry<String>>[
+                PopupMenuItem<String>(
+                  value: 'Theme',
+                  child: Text(
+                      _themeType,
+                    style: TextStyle(
+                      fontWeight: FontWeight.normal,
+                    ),
+                  )
+
+                ),
+                PopupMenuItem(
+                  value: 'Delete',
+                  child: Text(
+                    "Delete All Notes",
+                    style: TextStyle(
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
                 )
               ];
             },
-          )
+          ),
         ],
         title: Text('All Notes'),
       ),
@@ -138,12 +169,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          navigateToDetail(Note('', ''), 'Add Note',widget.darkThemeEnabled);
+          navigateToDetail(Note('', ''), 'Add Note',widget.darkThemeEnabled,false);
         },
         tooltip: 'Add Note',
-        shape: CircleBorder(side: BorderSide(color: !widget.darkThemeEnabled ? Colors.redAccent:Colors.blue, width: 6.0)),
+        shape: CircleBorder(side: BorderSide(color: !widget.darkThemeEnabled ? Colors.redAccent:Colors.indigo, width: 6.0)),
         child: Icon(Icons.add, color: Colors.white),
-        backgroundColor: !widget.darkThemeEnabled ? Colors.redAccent:Colors.blue,
+        backgroundColor: !widget.darkThemeEnabled ? Colors.redAccent:Colors.indigo,
       ),
     );
   }
@@ -155,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
       itemCount: count,
       itemBuilder: (BuildContext context, int index) => GestureDetector(
         onTap: () {
-          navigateToDetail(this.noteList[index], 'Edit Note', widget.darkThemeEnabled);
+          navigateToDetail(this.noteList[index], 'Edit Note', widget.darkThemeEnabled,true);
         },
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -250,9 +281,9 @@ class _HomeScreenState extends State<HomeScreen> {
       });
   }
 
-  void navigateToDetail(Note note, String title, bool darkThemeEnabled) async {
+  void navigateToDetail(Note note, String title, bool darkThemeEnabled, bool editFlag) async {
     bool result = await Navigator.push(context,
-        MaterialPageRoute(builder: (context) => AddNoteScreen(note, title,darkThemeEnabled)));
+        MaterialPageRoute(builder: (context) => AddNoteScreen(note, title,darkThemeEnabled,editFlag)));
 
     if (result == true) {
       updateListView();

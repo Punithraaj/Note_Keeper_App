@@ -3,14 +3,17 @@ import 'package:flutter_note_app/model/notes.dart';
 import 'package:flutter_note_app/utils/db_helper.dart';
 import 'package:flutter_note_app/utils/theme_bloc.dart';
 import 'package:flutter_note_app/utils/theme_data.dart';
+import 'package:flutter_note_app/widgets/alertdialog_widget.dart';
 import 'package:intl/intl.dart';
+import 'package:share/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AddNoteScreen extends StatefulWidget {
   final String  title;
   final Note  note;
   final bool darkThemeEnabled;
-  AddNoteScreen(this.note, this.title, this.darkThemeEnabled,);
+  final bool editFlag;
+  AddNoteScreen(this.note, this.title, this.darkThemeEnabled, this.editFlag,);
 
   @override
   _AddNoteScreenState createState() => _AddNoteScreenState();
@@ -71,16 +74,14 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                   _isEditiable ? showDiscardDialog(context) : moveToLastScreen();
                 }),
             actions: <Widget>[
-              IconButton(
-                icon: Icon(
-                  Icons.save,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  _titleController.text.length == 0
-                      ? showEmptyTitleDialog(context)
-                      : _save();
-                },
+              Visibility(
+                  child: IconButton(
+                    onPressed: () {
+                      Share.share(widget.note.title+'\n\n'+widget.note.date+'\n\n'+widget.note.description);
+                    },
+                    icon: Icon(Icons.share),
+                  ),
+                visible: widget.editFlag,
               ),
               IconButton(
                 icon: Icon(Icons.delete, color: Colors.white),
@@ -176,6 +177,17 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               ],
             ),
           ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              _titleController.text.length == 0
+                  ? showEmptyTitleDialog(context)
+                  : _save();
+            },
+            tooltip: 'Save',
+            shape: CircleBorder(side: BorderSide(color: !Themes.darkThemeEnabled ? Colors.redAccent:Colors.indigo, width: 6.0)),
+            child: Icon(Icons.save, color: Colors.white),
+            backgroundColor: !Themes.darkThemeEnabled ? Colors.redAccent:Colors.indigo,
+          ),
         ));
   }
 
@@ -183,38 +195,16 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(10.0))),
-          title: Text(
-            "Discard Changes?",
-            style: Theme.of(context).textTheme.body1,
-          ),
-          content: Text("Are you sure you want to discard changes?",
-              style: Theme.of(context).textTheme.body2),
-          actions: <Widget>[
-            FlatButton(
-              child: Text("No",
-                  style: Theme.of(context)
-                      .textTheme
-                      .body1
-                      .copyWith(color: Colors.purple)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            FlatButton(
-              child: Text("Yes",
-                  style: Theme.of(context)
-                      .textTheme
-                      .body1
-                      .copyWith(color: Colors.purple)),
-              onPressed: () {
-                Navigator.of(context).pop();
-                moveToLastScreen();
-              },
-            ),
-          ],
+        return AlertDialogWidget(
+          contentTitle: "Discard Changes",
+          contentText: "Are you sure you want to discard changes?",
+          confirmFunction: () async {
+            Navigator.of(context).pop();
+            moveToLastScreen();
+          },
+          declineFunction: () {
+            Navigator.of(context).pop();
+            },
         );
       },
     );
@@ -247,6 +237,8 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           ],
         );
       },
+
+
     );
   }
 
@@ -254,38 +246,16 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(10.0))),
-          title: Text(
-            "Delete Note?",
-            style: Theme.of(context).textTheme.body1,
-          ),
-          content: Text("Are you sure you want to delete this note?",
-              style: Theme.of(context).textTheme.body2),
-          actions: <Widget>[
-            FlatButton(
-              child: Text("No",
-                  style: Theme.of(context)
-                      .textTheme
-                      .body1
-                      .copyWith(color: Colors.purple)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            FlatButton(
-              child: Text("Yes",
-                  style: Theme.of(context)
-                      .textTheme
-                      .body1
-                      .copyWith(color: Colors.purple)),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _delete();
-              },
-            ),
-          ],
+        return AlertDialogWidget(
+          contentTitle: "Delete Note?",
+          contentText: "Are you sure you want to delete this note?",
+          confirmFunction: () async {
+            Navigator.of(context).pop();
+            _delete();
+          },
+          declineFunction: () {
+            Navigator.of(context).pop();
+          },
         );
       },
     );

@@ -4,8 +4,8 @@ class Themes {
   static ThemeData light = ThemeData(
     fontFamily: 'Montserrat',
     brightness: Brightness.light,
-    accentColor: Colors.blueAccent,
-    primarySwatch: Colors.blue,
+    accentColor: Colors.indigoAccent,
+    primarySwatch: Colors.indigo,
   );
   static ThemeData dark = ThemeData(
     fontFamily: 'Montserrat',
